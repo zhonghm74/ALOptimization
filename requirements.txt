@@ -8,3 +8,4 @@ jupyterlab
 pytest
 black
 ruff
+ortools
