@@ -1,0 +1,246 @@
+{
+  "metadata": {
+    "case_id": "alm_full_test_001",
+    "case_name": "ALM full test input with complete data/constraints/objective",
+    "currency": "CNY",
+    "time_horizon_months": 12,
+    "description": "Comprehensive test input for ALM LP pipeline. Includes business data and LP-ready model sections."
+  },
+  "business_data": {
+    "assets": [
+      {
+        "id": "gov_bond",
+        "name": "Government Bond Portfolio",
+        "expected_return": 0.038,
+        "liquidity_weight": 0.95,
+        "duration_years": 2.0,
+        "lower_bound": 0,
+        "upper_bound": 120
+      },
+      {
+        "id": "corp_bond",
+        "name": "Corporate Bond Portfolio",
+        "expected_return": 0.062,
+        "liquidity_weight": 0.60,
+        "duration_years": 4.0,
+        "lower_bound": 0,
+        "upper_bound": 90
+      },
+      {
+        "id": "mortgage_loan",
+        "name": "Mortgage Loan Portfolio",
+        "expected_return": 0.075,
+        "liquidity_weight": 0.20,
+        "duration_years": 6.0,
+        "lower_bound": 40,
+        "upper_bound": 100
+      }
+    ],
+    "liabilities": [
+      {
+        "id": "deposit_funding",
+        "name": "Customer Deposit Funding",
+        "funding_cost": 0.018,
+        "lower_bound": 110,
+        "upper_bound": 220
+      },
+      {
+        "id": "wholesale_funding",
+        "name": "Wholesale Funding",
+        "funding_cost": 0.041,
+        "lower_bound": 0,
+        "upper_bound": 80
+      }
+    ],
+    "policy_parameters": {
+      "total_asset_target": 200,
+      "minimum_liquidity_coverage": 120,
+      "duration_exposure_upper_bound": 850,
+      "max_wholesale_funding": 60,
+      "max_corporate_bond_allocation": 70
+    }
+  },
+  "variable_mapping": {
+    "asset_gov_bond": "Allocation amount of Government Bond Portfolio",
+    "asset_corp_bond": "Allocation amount of Corporate Bond Portfolio",
+    "asset_mortgage_loan": "Allocation amount of Mortgage Loan Portfolio",
+    "funding_deposit": "Funding amount from customer deposits",
+    "funding_wholesale": "Funding amount from wholesale channels",
+    "liquidity_shortfall": "Soft-constraint slack for liquidity floor"
+  },
+  "variables": [
+    {
+      "name": "asset_gov_bond",
+      "lb": 0,
+      "ub": 120
+    },
+    {
+      "name": "asset_corp_bond",
+      "lb": 0,
+      "ub": 90
+    },
+    {
+      "name": "asset_mortgage_loan",
+      "lb": 40,
+      "ub": 100
+    },
+    {
+      "name": "funding_deposit",
+      "lb": 110,
+      "ub": 220
+    },
+    {
+      "name": "funding_wholesale",
+      "lb": 0,
+      "ub": 80
+    },
+    {
+      "name": "liquidity_shortfall",
+      "lb": 0,
+      "ub": null
+    }
+  ],
+  "constraints": [
+    {
+      "name": "asset_target",
+      "lb": 200,
+      "ub": 200,
+      "terms": [
+        {
+          "var": "asset_gov_bond",
+          "coef": 1
+        },
+        {
+          "var": "asset_corp_bond",
+          "coef": 1
+        },
+        {
+          "var": "asset_mortgage_loan",
+          "coef": 1
+        }
+      ]
+    },
+    {
+      "name": "balance_equation",
+      "lb": 0,
+      "ub": 0,
+      "terms": [
+        {
+          "var": "asset_gov_bond",
+          "coef": 1
+        },
+        {
+          "var": "asset_corp_bond",
+          "coef": 1
+        },
+        {
+          "var": "asset_mortgage_loan",
+          "coef": 1
+        },
+        {
+          "var": "funding_deposit",
+          "coef": -1
+        },
+        {
+          "var": "funding_wholesale",
+          "coef": -1
+        }
+      ]
+    },
+    {
+      "name": "liquidity_floor_with_soft_slack",
+      "lb": 120,
+      "ub": null,
+      "terms": [
+        {
+          "var": "asset_gov_bond",
+          "coef": 0.95
+        },
+        {
+          "var": "asset_corp_bond",
+          "coef": 0.60
+        },
+        {
+          "var": "asset_mortgage_loan",
+          "coef": 0.20
+        },
+        {
+          "var": "liquidity_shortfall",
+          "coef": 1
+        }
+      ]
+    },
+    {
+      "name": "duration_exposure_cap",
+      "lb": null,
+      "ub": 850,
+      "terms": [
+        {
+          "var": "asset_gov_bond",
+          "coef": 2.0
+        },
+        {
+          "var": "asset_corp_bond",
+          "coef": 4.0
+        },
+        {
+          "var": "asset_mortgage_loan",
+          "coef": 6.0
+        }
+      ]
+    },
+    {
+      "name": "wholesale_funding_cap",
+      "lb": null,
+      "ub": 60,
+      "terms": [
+        {
+          "var": "funding_wholesale",
+          "coef": 1
+        }
+      ]
+    },
+    {
+      "name": "corporate_bond_concentration_cap",
+      "lb": null,
+      "ub": 70,
+      "terms": [
+        {
+          "var": "asset_corp_bond",
+          "coef": 1
+        }
+      ]
+    }
+  ],
+  "objective": {
+    "sense": "max",
+    "description": "Maximize net annualized return minus liquidity shortfall penalty.",
+    "terms": [
+      {
+        "var": "asset_gov_bond",
+        "coef": 0.038
+      },
+      {
+        "var": "asset_corp_bond",
+        "coef": 0.062
+      },
+      {
+        "var": "asset_mortgage_loan",
+        "coef": 0.075
+      },
+      {
+        "var": "funding_deposit",
+        "coef": -0.018
+      },
+      {
+        "var": "funding_wholesale",
+        "coef": -0.041
+      },
+      {
+        "var": "liquidity_shortfall",
+        "coef": -0.5
+      }
+    ],
+    "constant": 0
+  }
+}
