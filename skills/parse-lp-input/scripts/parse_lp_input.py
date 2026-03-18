@@ -5,8 +5,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+
+@dataclass
+class Result:
+    """Standard script result payload."""
+
+    success: bool
+    message: str
+    exit_code: int
+    data: dict[str, Any] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 def _num_or_none(value: Any, field: str) -> float | None:
@@ -125,23 +139,56 @@ def normalize_lp_input(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def run(input_path: Path, output_path: Path) -> Result:
+    """Run normalization flow and return structured result."""
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        raw = _load_json(input_path)
+        normalized = normalize_lp_input(raw)
+        with output_path.open("w", encoding="utf-8") as f:
+            json.dump(normalized, f, ensure_ascii=True, indent=2)
+        return Result(
+            success=True,
+            message=f"Normalized LP spec written to: {output_path}",
+            exit_code=0,
+            data={"output_path": str(output_path)},
+        )
+    except (ValueError, json.JSONDecodeError) as exc:
+        return Result(
+            success=False,
+            message="Input validation failed.",
+            exit_code=2,
+            errors=[str(exc)],
+        )
+    except Exception as exc:
+        return Result(
+            success=False,
+            message="Unexpected error while normalizing LP input.",
+            exit_code=1,
+            errors=[str(exc)],
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Parse and normalize LP input JSON.")
     parser.add_argument("--input", required=True, help="Path to raw input JSON.")
     parser.add_argument("--output", required=True, help="Path to normalized output JSON.")
     args = parser.parse_args()
 
-    input_path = Path(args.input)
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        result = run(Path(args.input), Path(args.output))
+    except Exception as exc:
+        print(f"Fatal error: {exc}", file=sys.stderr)
+        sys.exit(1)
 
-    raw = _load_json(input_path)
-    normalized = normalize_lp_input(raw)
+    if result.success:
+        print(result.message)
+        sys.exit(0)
 
-    with output_path.open("w", encoding="utf-8") as f:
-        json.dump(normalized, f, ensure_ascii=True, indent=2)
-
-    print(f"Normalized LP spec written to: {output_path}")
+    print(f"Error: {result.message}", file=sys.stderr)
+    for error in result.errors:
+        print(f"  - {error}", file=sys.stderr)
+    sys.exit(result.exit_code)
 
 
 if __name__ == "__main__":

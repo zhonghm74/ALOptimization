@@ -5,10 +5,27 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ortools.linear_solver import pywraplp
+try:
+    from ortools.linear_solver import pywraplp
+except ImportError:
+    pywraplp = None  # type: ignore[assignment]
+
+
+@dataclass
+class Result:
+    """Standard script result payload."""
+
+    success: bool
+    message: str
+    exit_code: int
+    data: dict[str, Any] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -20,6 +37,8 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 
 def _status_name(status_code: int) -> str:
+    if pywraplp is None:
+        return "NOT_AVAILABLE"
     candidates = [
         "OPTIMAL",
         "FEASIBLE",
@@ -45,6 +64,9 @@ def _constraint_activity(
 def solve_lp_model(
     model_spec: dict[str, Any], solver_name: str = "GLOP", time_limit_ms: int | None = None
 ) -> dict[str, Any]:
+    if pywraplp is None:
+        raise RuntimeError("ortools is not installed. Please install `ortools` first.")
+
     solver = pywraplp.Solver.CreateSolver(solver_name)
     if solver is None:
         raise RuntimeError(f"Could not create OR-Tools solver: {solver_name}")
@@ -134,6 +156,38 @@ def solve_lp_model(
     }
 
 
+def run(input_path: Path, output_path: Path, solver_name: str, time_limit_ms: int | None) -> Result:
+    """Run solve flow and return structured result."""
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        model_spec = _load_json(input_path)
+        solve_result = solve_lp_model(
+            model_spec, solver_name=solver_name, time_limit_ms=time_limit_ms
+        )
+        with output_path.open("w", encoding="utf-8") as f:
+            json.dump(solve_result, f, ensure_ascii=True, indent=2)
+        return Result(
+            success=True,
+            message=f"Solve result written to: {output_path}",
+            exit_code=0,
+            data={"output_path": str(output_path), "status": solve_result.get("status")},
+        )
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError, RuntimeError) as exc:
+        return Result(
+            success=False,
+            message="Invalid solver input or solver configuration.",
+            exit_code=2,
+            errors=[str(exc)],
+        )
+    except Exception as exc:
+        return Result(
+            success=False,
+            message="Unexpected error during solve.",
+            exit_code=1,
+            errors=[str(exc)],
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build and solve LP with OR-Tools.")
     parser.add_argument("--input", required=True, help="Path to normalized LP JSON.")
@@ -151,20 +205,27 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    input_path = Path(args.input)
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        result = run(
+            input_path=Path(args.input),
+            output_path=Path(args.output),
+            solver_name=args.solver,
+            time_limit_ms=args.time_limit_ms,
+        )
+    except Exception as exc:
+        print(f"Fatal error: {exc}", file=sys.stderr)
+        sys.exit(1)
 
-    model_spec = _load_json(input_path)
-    result = solve_lp_model(model_spec, solver_name=args.solver, time_limit_ms=args.time_limit_ms)
+    if result.success:
+        print(result.message)
+        if result.data.get("status"):
+            print(f"Status: {result.data['status']}")
+        sys.exit(0)
 
-    with output_path.open("w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=True, indent=2)
-
-    print(f"Solve result written to: {output_path}")
-    print(f"Status: {result['status']}")
-    if result["objective_value"] is not None:
-        print(f"Objective value: {result['objective_value']:.6f}")
+    print(f"Error: {result.message}", file=sys.stderr)
+    for error in result.errors:
+        print(f"  - {error}", file=sys.stderr)
+    sys.exit(result.exit_code)
 
 
 if __name__ == "__main__":

@@ -5,8 +5,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+
+@dataclass
+class Result:
+    """Standard script result payload."""
+
+    success: bool
+    message: str
+    exit_code: int
+    data: dict[str, Any] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -105,6 +119,51 @@ def _to_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def run(
+    normalized_input_path: Path,
+    solution_path: Path,
+    report_json_path: Path,
+    report_md_path: Path,
+) -> Result:
+    """Run report generation and return structured result."""
+    try:
+        normalized = _load_json(normalized_input_path)
+        solution = _load_json(solution_path)
+        report = _build_report(normalized, solution)
+
+        report_json_path.parent.mkdir(parents=True, exist_ok=True)
+        report_md_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with report_json_path.open("w", encoding="utf-8") as f:
+            json.dump(report, f, ensure_ascii=True, indent=2)
+        with report_md_path.open("w", encoding="utf-8") as f:
+            f.write(_to_markdown(report))
+
+        return Result(
+            success=True,
+            message="ALM report generated successfully.",
+            exit_code=0,
+            data={
+                "report_json_path": str(report_json_path),
+                "report_md_path": str(report_md_path),
+            },
+        )
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        return Result(
+            success=False,
+            message="Invalid reporting input artifacts.",
+            exit_code=2,
+            errors=[str(exc)],
+        )
+    except Exception as exc:
+        return Result(
+            success=False,
+            message="Unexpected error while generating report.",
+            exit_code=1,
+            errors=[str(exc)],
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate ALM report from LP solution.")
     parser.add_argument("--normalized-input", required=True, help="Path to normalized LP JSON.")
@@ -113,22 +172,27 @@ def main() -> None:
     parser.add_argument("--report-md", required=True, help="Path to output markdown report.")
     args = parser.parse_args()
 
-    normalized = _load_json(Path(args.normalized_input))
-    solution = _load_json(Path(args.solution))
-    report = _build_report(normalized, solution)
+    try:
+        result = run(
+            normalized_input_path=Path(args.normalized_input),
+            solution_path=Path(args.solution),
+            report_json_path=Path(args.report_json),
+            report_md_path=Path(args.report_md),
+        )
+    except Exception as exc:
+        print(f"Fatal error: {exc}", file=sys.stderr)
+        sys.exit(1)
 
-    report_json_path = Path(args.report_json)
-    report_md_path = Path(args.report_md)
-    report_json_path.parent.mkdir(parents=True, exist_ok=True)
-    report_md_path.parent.mkdir(parents=True, exist_ok=True)
+    if result.success:
+        print(result.message)
+        print(f"Report JSON written to: {result.data['report_json_path']}")
+        print(f"Report Markdown written to: {result.data['report_md_path']}")
+        sys.exit(0)
 
-    with report_json_path.open("w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=True, indent=2)
-    with report_md_path.open("w", encoding="utf-8") as f:
-        f.write(_to_markdown(report))
-
-    print(f"Report JSON written to: {report_json_path}")
-    print(f"Report Markdown written to: {report_md_path}")
+    print(f"Error: {result.message}", file=sys.stderr)
+    for error in result.errors:
+        print(f"  - {error}", file=sys.stderr)
+    sys.exit(result.exit_code)
 
 
 if __name__ == "__main__":
