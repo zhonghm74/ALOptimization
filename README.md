@@ -38,18 +38,19 @@ are fully defined in the input file.
 1. `skills/parse-lp-input` - validate and normalize input JSON
 2. `skills/build-and-solve-lp` - build and solve LP model with OR-Tools
 3. `skills/generate-lp-report` - generate JSON and Markdown report
-4. `skills/run-alm-lp-pipeline` - orchestrate the full flow
+4. `skills/linear-programming-solver` - end-to-end methodology: parse -> build/solve -> report
 
 ### Example input
 
-- `examples/input/alm_lp_input.json`
+- `examples/alm_lp_full_test_input.md`
 
-### Run the full pipeline
+### End-to-end methodology flow
 
-```bash
-python skills/run-alm-lp-pipeline/scripts/run_pipeline.py \
-  --input examples/input/alm_lp_input.json \
-  --output-dir examples/output
+```text
+Step 1: Use skills/parse-lp-input to extract model_json + problem_description_md + variable_name_map_cn
+Step 2: Use skills/build-and-solve-lp methodology to model/solve with OR-Tools
+Step 3: Use skills/generate-lp-report to produce report_json/report_md and charts
+Step 4: Use skills/linear-programming-solver as orchestration methodology and quality checklist
 ```
 
 ### Output files
