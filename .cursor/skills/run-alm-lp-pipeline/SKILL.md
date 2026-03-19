@@ -22,6 +22,7 @@ Orchestrate the full minimal ALM LP flow from raw input to final report artifact
 | input | path | Raw LP JSON input file |
 | output_dir | path | Directory for generated artifacts |
 | solver | string | Solver backend passed to solve stage |
+| extracted_json | path | Optional AI-extracted LP JSON forwarded to parse step |
 | output.normalized_lp.json | file | Normalized model input |
 | output.solution.json | file | Solver result payload |
 | output.report.json / report.md | file | User-facing reporting outputs |
@@ -46,7 +47,8 @@ Usage:
 
 ```bash
 python skills/run-alm-lp-pipeline/scripts/run_pipeline.py \
-  --input examples/input/alm_lp_input.json \
+  --input examples/alm_lp_full_test_input.md \
+  --extracted-json /tmp/ai_extracted_lp.json \
   --output-dir examples/output
 ```
 

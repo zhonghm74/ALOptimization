@@ -1,25 +1,28 @@
 ---
 name: parse-lp-input
-description: Extract variables, constraints, and objective from JSON, Markdown, TXT, CSV, or Excel documents, then normalize into LP-ready JSON.
+description: AI-first LP parsing skill. Use the model to extract variables/constraints/objective from any document, then use lightweight script helpers to normalize and validate LP JSON.
 license: MIT
 ---
 
 # parse-lp-input
 
 ## Purpose
-Convert heterogeneous ALM input documents into a validated and normalized LP specification consumed by solver skills.
+Let the model perform document understanding and extraction, while script utilities only handle prompt/template generation and strict LP normalization.
 
 ## Triggers
-- `extract LP model from markdown or txt`
-- `parse variables constraints objective from csv or excel`
-- `normalize alm optimization input from any document`
+- `extract LP model from any document with AI`
+- `generate dynamic parser code for lp input`
+- `normalize ai extracted variables constraints objective`
 - `prepare model spec for ortools`
 
 ## I/O Contract
 
 | Field | Type | Description |
 |---|---|---|
-| input_path | path | Input document path (`.json`, `.md`, `.txt`, `.csv`, `.xlsx`, `.xlsm`, `.xls`) |
+| input_path | path | Source document path (any format) |
+| extracted_json | path | AI-extracted LP JSON payload (recommended for non-JSON files) |
+| emit_extraction_prompt | path | Optional output path for model extraction prompt |
+| emit_parser_template | path | Optional output path for dynamic parser template code |
 | output_path | path | Normalized JSON output path |
 | output.variables | array | Variables with normalized bounds (`float` or `null`) |
 | output.constraints | array | Constraint list referencing declared variables only |
@@ -28,10 +31,11 @@ Convert heterogeneous ALM input documents into a validated and normalized LP spe
 ## Process
 
 ### Phase 1 - Structural Validation
-- Detect source format and extract `variables`, `constraints`, `objective`.
-- Support direct JSON, sectioned tabular CSV/Excel, and markdown/txt equation documents.
+- If needed, emit an extraction prompt and parser template for model-driven parsing.
+- Model extracts `variables`, `constraints`, `objective` from source documents.
 
 ### Phase 2 - Numeric Normalization
+- Script validates only LP schema consistency and numeric bounds.
 - Normalize numeric values to float.
 - Preserve `null` for open bounds.
 
@@ -48,27 +52,37 @@ Usage:
 ```bash
 python skills/parse-lp-input/scripts/parse_lp_input.py \
   --input examples/alm_lp_full_test_input.md \
+  --extracted-json /tmp/ai_extracted_lp.json \
   --output examples/output/normalized_lp.json
+```
+
+Generate AI helper artifacts:
+
+```bash
+python skills/parse-lp-input/scripts/parse_lp_input.py \
+  --input examples/alm_lp_full_test_input.md \
+  --output examples/output/normalized_lp.json \
+  --emit-extraction-prompt /tmp/extract_prompt.txt \
+  --emit-parser-template /tmp/dynamic_parser.py
 ```
 
 Exit Codes:
 - `0`: Success.
 - `1`: Unexpected runtime failure.
-- `2`: Input data validation error (schema/reference/bounds).
+- `2`: Extraction/validation error (missing extracted JSON, schema/reference/bounds issues).
 
 ## Verification
-- [ ] Valid input returns exit code `0` and writes `normalized_lp.json`.
-- [ ] Markdown/TXT equation documents can be parsed into valid LP JSON.
-- [ ] Sectioned CSV/Excel inputs can be parsed into valid LP JSON.
+- [ ] Prompt/template files are emitted when requested.
+- [ ] AI-extracted JSON is normalized successfully with exit code `0`.
 - [ ] Duplicate variable names fail with exit code `2`.
 - [ ] Unknown variable references in objective/constraints fail with exit code `2`.
 
 ## Anti-Patterns
-- Do not infer missing variables from terms.
-- Do not silently coerce non-numeric coefficient values.
-- Do not emit partial output after validation errors.
+- Do not hardcode parser logic for every file format in this script.
+- Do not skip model extraction for unstructured documents.
+- Do not emit partial normalized output after validation errors.
 
 ## Extension Points
-- Add optional schema versioning and backward compatibility checks.
-- Add domain-specific ALM business-rule prechecks before normalization.
-- Add LLM-assisted extraction fallback for highly unstructured documents.
+- Add automated evaluator prompts to score extraction quality before normalization.
+- Add few-shot parser-template libraries for recurring vendor file layouts.
+- Add domain-specific ALM business-rule prechecks after normalization.
