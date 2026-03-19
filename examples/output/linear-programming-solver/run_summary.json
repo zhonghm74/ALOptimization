@@ -8,7 +8,7 @@
     "normalized_lp": "/workspace/examples/output/linear-programming-solver/normalized_lp.json",
     "solution": "/workspace/examples/output/linear-programming-solver/solution.json",
     "status": "OPTIMAL",
-    "objective_value": 11.068161051462422
+    "objective_value": 11.130468101596252
   },
   "stage3": {
     "report_json": "/workspace/examples/output/linear-programming-solver/report.json",
