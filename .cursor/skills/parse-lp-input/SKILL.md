@@ -25,6 +25,15 @@ read business documents and produce a complete, self-consistent LP problem defin
 | Output.objective | object | Objective with `sense`, `terms[{var,coef}]`, `constant` |
 | Output.metadata | object | Optional case metadata and extraction notes |
 
+## Indexing and Expansion Policy
+- Preserve symbolic indexed forms by default (e.g., `x[t,Ai]`, `y[t,Lj]`, `s_liq[t]`, `r[t,Ai]`).
+- Only apply time/index expansion when the source document explicitly requires concrete expanded names.
+- Do not perform Cartesian expansion for static parameters or template constraints that are not explicitly expanded in the document.
+- Keep constraints aligned with document granularity:
+  - daily constraints remain in indexed form with quantifiers like `for each t=1..90`
+  - cross-day constraints remain in indexed form with quantifiers like `for each t=2..90`
+- Record expansion assumptions (if any) in `metadata.assumptions`.
+
 ## Process
 
 ### Phase 1 - Understand Business Context
@@ -50,12 +59,15 @@ read business documents and produce a complete, self-consistent LP problem defin
 - [ ] All constraint term variables appear in `variables`.
 - [ ] All parameter variables are explicitly listed in `variables`.
 - [ ] Every constraint has non-empty `terms` and at least one bound (`lb` or `ub`).
+- [ ] Variable extraction follows source granularity: indexed variables stay indexed unless explicit expansion is requested.
+- [ ] No unnecessary expansion of static parameters/constraints beyond the source document.
 - [ ] Output can be consumed by downstream solve/report skills without schema changes.
 
 ## Anti-Patterns
 - Do not copy narrative text into coefficients without interpretation.
 - Do not hide uncertain mappings; record assumptions explicitly.
 - Do not invent constraints/objectives unsupported by source evidence.
+- Do not materialize indexed templates into thousands of concrete variables unless the source explicitly asks for expansion.
 
 ## Extension Points
 - Add domain-specific extraction checklists (ALM, supply chain, scheduling, etc.).
