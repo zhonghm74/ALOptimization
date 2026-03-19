@@ -469,7 +469,7 @@ def run(
     root = Path(__file__).resolve().parents[3]
     solve_script = root / "skills" / "build-and-solve-lp" / "scripts" / "build_and_solve_lp.py"
     report_script = (
-        root / "skills" / "generate-alm-report" / "scripts" / "generate_alm_report.py"
+        root / "skills" / "generate-lp-report" / "scripts" / "generate_lp_report.py"
     )
 
     try:

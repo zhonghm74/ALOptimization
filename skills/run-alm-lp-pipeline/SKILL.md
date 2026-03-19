@@ -32,7 +32,7 @@ Orchestrate the remaining executable stages (solve + report) after parse-lp-inpu
 - Run `build-and-solve-lp` script with configured solver.
 
 ### Phase 2 - Report
-- Run `generate-alm-report` script and emit final artifacts.
+- Run `generate-lp-report` stage and emit final artifacts.
 
 ## Scripts
 

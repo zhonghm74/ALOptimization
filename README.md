@@ -37,7 +37,7 @@ are fully defined in the input file.
 
 1. `skills/parse-lp-input` - validate and normalize input JSON
 2. `skills/build-and-solve-lp` - build and solve LP model with OR-Tools
-3. `skills/generate-alm-report` - generate JSON and Markdown report
+3. `skills/generate-lp-report` - generate JSON and Markdown report
 4. `skills/run-alm-lp-pipeline` - orchestrate the full flow
 
 ### Example input
