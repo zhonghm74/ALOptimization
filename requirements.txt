@@ -11,3 +11,5 @@ ruff
 ortools
 openpyxl
 matplotlib
+seaborn
+plotly
