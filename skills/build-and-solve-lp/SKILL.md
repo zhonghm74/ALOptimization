@@ -1,18 +1,18 @@
 ---
 name: build-and-solve-lp
-description: Build and solve ALM linear programming models with OR-Tools from normalized model definitions.
+description: Build and solve LP models by dynamically creating and running a Python OR-Tools script.
 license: MIT
 ---
 
 # build-and-solve-lp
 
 ## Purpose
-Use OR-Tools to construct and solve a linear programming (LP) model from normalized inputs, then return solver-ready results with strict quality checks.
+Use OR-Tools to construct and solve a linear programming (LP) model from normalized inputs, by dynamically creating a Python script under `scripts/`, then returning solver-ready results with strict quality checks.
 
 ## Triggers
 - `solve alm lp model`
 - `run ortools glop optimization`
-- `build solver model from normalized json`
+- `build solver model from normalized json via dynamic script`
 - `compute duals and reduced costs`
 
 ## I/O Contract
@@ -21,6 +21,7 @@ Use OR-Tools to construct and solve a linear programming (LP) model from normali
 |---|---|---|
 | Input.model_json | object | Normalized LP model with `variables`, `constraints`, `objective`, `metadata` |
 | Input.solver_backend | string | OR-Tools backend, e.g. `GLOP`, `PDLP` |
+| Input.command | shell | Dynamically create solver script under `scripts/`, then run: `python3 scripts/<generated_solver_script>.py --input <model_json> --backend <backend> --output <solution_json>` |
 | Output.solution_json | object | Solver output with status, objective value, variable assignments, constraint activity |
 | Output.status | string | `OPTIMAL`, `FEASIBLE`, `INFEASIBLE`, `UNBOUNDED`, `ABNORMAL`, etc. |
 | Output.variable_values | object | Primal variable assignments when a primal solution exists |
@@ -28,6 +29,40 @@ Use OR-Tools to construct and solve a linear programming (LP) model from normali
 | Output.duals | object | Dual values when backend and status support dual extraction |
 | Output.reduced_costs | object | Reduced costs when backend and status support extraction |
 | Output.validation | object | Verification results against modeling and numerical quality standards |
+
+## Scripts
+- No fixed solver script is checked in as the default implementation.
+- For each task, dynamically create a temporary solver script under `scripts/`, execute it, validate outputs, and iterate if needed.
+- Recommended temporary names:
+  - `scripts/generated_build_and_solve_lp_<timestamp>.py`
+  - `scripts/tmp_build_and_solve_lp.py`
+
+## Process
+
+### Phase 1 - Dynamically Create Solver Script
+- Create a Python script dynamically in `scripts/` to:
+  1. load normalized `model_json`
+  2. build OR-Tools model (`variables`, `constraints`, `objective`)
+  3. solve with selected backend (`GLOP`/`PDLP`)
+  4. compute diagnostics (`activity`, `satisfied`, optional `duals`, `reduced_costs`)
+  5. write `solution_json`
+
+### Phase 2 - Run Solver Script
+- Run generated script, e.g.:
+  - `python3 scripts/<generated_solver_script>.py --input examples/alm_lp_full_test_input_parsed.json --backend GLOP --output examples/output/linear-programming-solver/solution.json`
+- Ensure solver status is explicit and machine-readable.
+
+### Phase 3 - Validate and Iterate Until Correct
+- Validate:
+  - model references complete (`terms.var` all declared)
+  - bounds/coefs numeric and valid
+  - status interpretable
+  - when primal exists, `objective_value` and `variable_values` present
+  - constraint activities and satisfaction checks consistent
+- If output is wrong/incomplete:
+  - modify/regenerate temporary script
+  - rerun
+  - repeat until outputs are correct
 
 ## OR-Tools 建模过程（详细）
 
@@ -84,6 +119,7 @@ Use OR-Tools to construct and solve a linear programming (LP) model from normali
 | 结果可复核性 | 可通过回代复核目标和约束 | 回代偏差在容差内 |
 
 ## Verification Checklist
+- [ ] Solver script is dynamically created under `scripts/` and executed successfully.
 - [ ] 所有目标项变量均在 `variables` 中声明。
 - [ ] 所有约束项变量均在 `variables` 中声明。
 - [ ] 所有约束均至少包含一个线性项，且至少有一侧边界（`lb` 或 `ub`）。
@@ -92,6 +128,8 @@ Use OR-Tools to construct and solve a linear programming (LP) model from normali
 - [ ] 约束活动值可计算，且满足性判断在容差范围内一致。
 
 ## Anti-Patterns
+- Do not rely on a stale fixed solver script when dynamic generation is required.
+- Do not manually patch `solution_json` as primary workflow; fix generated script and rerun.
 - Do not output variable assignments when solver has no primal solution.
 - Do not assume dual/reduced-cost is always available for every backend/status.
 - Do not skip reference checks between `terms.var` and declared variables.
