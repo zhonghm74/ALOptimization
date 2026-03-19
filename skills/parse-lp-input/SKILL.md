@@ -7,7 +7,7 @@ license: MIT
 # parse-lp-input
 
 ## Purpose
-Rely on model reasoning (not scripts) to read business documents and produce a complete, self-consistent LP problem definition.
+read business documents and produce a complete, self-consistent LP problem definition.
 
 ## Triggers
 - `extract LP model from any document with AI`
