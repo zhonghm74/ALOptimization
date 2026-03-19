@@ -1,0 +1,33 @@
+{
+  "model_json_file": "examples/alm_lp_full_test_input_parsed.json",
+  "problem_description_md_file": "examples/alm_lp_full_test_input_problem_description.md",
+  "variable_name_map_cn_file": "examples/alm_lp_full_test_input_variable_name_map_cn.json",
+  "output_contract": {
+    "model_json": "包含 variables / constraints / objective / metadata 的结构化LP定义",
+    "problem_description_md": "用文字描述问题背景、目标、变量与约束结构",
+    "variable_name_map_cn": "对 model_json.variables 中所有变量名给出中文名称"
+  },
+  "variable_name_map_cn": {
+    "x[t,Ai]": "第t天资产Ai持有量",
+    "y[t,Lj]": "第t天负债Lj融资量",
+    "s_liq[t]": "第t天流动性松弛变量",
+    "s_dur[t]": "第t天久期松弛变量",
+    "r[t,Ai]": "第t天资产Ai年化收益率参数",
+    "c[t,Lj]": "第t天负债Lj年化成本率参数",
+    "w[Ai]": "资产Ai流动性权重参数",
+    "d[Ai]": "资产Ai久期参数",
+    "delta_x[Ai]": "资产Ai跨日持仓变动上限参数",
+    "delta_y[Lj]": "负债Lj跨日持仓变动上限参数",
+    "total_assets_target": "每日总资产目标值",
+    "liquidity_threshold": "每日最低流动性覆盖阈值",
+    "duration_exposure_cap": "每日久期暴露上限",
+    "wholesale_funding_cap": "每日批发融资上限",
+    "high_vol_assets_cap": "每日高波动资产组合上限",
+    "single_asset_a15_cap": "每日A15单一资产集中度上限",
+    "term_structure_buffer": "期限结构匹配缓冲参数",
+    "retail_deposit_min_ratio": "零售存款最低占比参数",
+    "penalty_s_liq": "流动性松弛惩罚系数",
+    "penalty_s_dur": "久期松弛惩罚系数",
+    "daily_rate_denominator": "日化换算分母参数"
+  }
+}
