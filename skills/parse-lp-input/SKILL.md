@@ -20,7 +20,7 @@ read business documents and produce a complete, self-consistent LP problem defin
 | Field | Type | Description |
 |---|---|---|
 | Input.document | file | Source business document (Markdown/TXT/CSV/Excel converted/normalized to text) |
-| Input.command | shell | First create a temporary python parser under `skills/parse-lp-input/scripts/`, then run it with `python3 <tmp_script>.py --input <doc> --output-dir <dir>` |
+| Input.command | shell | First create a temporary python parser under `scripts/`, then run it with `python3 <tmp_script>.py --input <doc> --output-dir <dir>` |
 | Output.model_json | json | Structured LP definition with `variables`, `constraints`, `objective`, `metadata` |
 | Output.problem_description_md | markdown | Business-level problem description extracted from source |
 | Output.variable_name_map_cn | json | `{variable_name: chinese_name}` for all variables in `model_json.variables` |
@@ -36,7 +36,7 @@ read business documents and produce a complete, self-consistent LP problem defin
 
 ## Scripts
 - No fixed parser script is checked in as the default implementation.
-- The execution method is to dynamically create a Python script in `skills/parse-lp-input/scripts/` for the current input/task, run it, and iterate until outputs are correct.
+- The execution method is to dynamically create a Python script in `scripts/` for the current input/task, run it, and iterate until outputs are correct.
 - Recommended temporary script naming:
   - `scripts/generated_parse_lp_input_<timestamp>.py`
   - `scripts/tmp_parse_lp_input.py`
@@ -44,7 +44,7 @@ read business documents and produce a complete, self-consistent LP problem defin
 ## Process
 
 ### Phase 1 - Dynamically Create Parser Script
-- Create a Python parser script dynamically in `skills/parse-lp-input/scripts/`.
+- Create a Python parser script dynamically in `scripts/`.
 - The generated script should implement extraction for:
   - LP model (`variables`, `constraints`, `objective`, `metadata`)
   - `problem_description_md`
@@ -54,7 +54,7 @@ read business documents and produce a complete, self-consistent LP problem defin
 
 ### Phase 2 - Run Script to Extract Artifacts
 - Run:
-  - `python3 skills/parse-lp-input/scripts/<generated_script>.py --input examples/alm_lp_full_test_input.md --output-dir examples`
+  - `python3 scripts/<generated_script>.py --input examples/alm_lp_full_test_input.md --output-dir examples`
 - Expect these files:
   - `<stem>_parsed.json`
   - `<stem>_problem_description.md`
@@ -76,7 +76,7 @@ read business documents and produce a complete, self-consistent LP problem defin
   - repeat until outputs are correct
 
 ## Verification
-- [ ] Parser is dynamically created under `skills/parse-lp-input/scripts/` and executed successfully.
+- [ ] Parser is dynamically created under `scripts/` and executed successfully.
 - [ ] Running generated script produces all 6 output files.
 - [ ] All objective variables appear in `variables`.
 - [ ] All constraint term variables appear in `variables`.
