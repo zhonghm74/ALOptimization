@@ -48,6 +48,7 @@ read business documents and produce a complete, self-consistent LP problem defin
 ## Verification
 - [ ] All objective variables appear in `variables`.
 - [ ] All constraint term variables appear in `variables`.
+- [ ] All parameter variables are explicitly listed in `variables`.
 - [ ] Every constraint has non-empty `terms` and at least one bound (`lb` or `ub`).
 - [ ] Output can be consumed by downstream solve/report skills without schema changes.
 
