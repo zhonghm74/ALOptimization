@@ -65,7 +65,12 @@ def _row_get(row: dict[str, Any], aliases: list[str], default: Any = None) -> An
     for alias in aliases:
         key = _normalize_key(alias)
         if key in row:
-            return row[key]
+            value = row[key]
+            if value is None:
+                continue
+            if isinstance(value, str) and value.strip() == "":
+                continue
+            return value
     return default
 
 
