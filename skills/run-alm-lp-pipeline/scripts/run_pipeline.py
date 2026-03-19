@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
+from shutil import copyfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -29,15 +31,22 @@ def _run(cmd: list[str]) -> None:
         raise RuntimeError(f"Command failed ({result.returncode}): {' '.join(cmd)}")
 
 
+def _validate_normalized_payload(path: Path) -> None:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("Normalized input must be a JSON object.")
+    for required in ("variables", "constraints", "objective"):
+        if required not in data:
+            raise ValueError(f"Normalized input missing required field: {required}")
+
+
 def run(
     input_path: Path,
     output_dir: Path,
     solver_name: str,
-    extracted_json_path: Path | None = None,
 ) -> Result:
-    """Run the three-stage ALM pipeline and return structured result."""
+    """Run solve/report stages from normalized LP input."""
     root = Path(__file__).resolve().parents[3]
-    parse_script = root / "skills" / "parse-lp-input" / "scripts" / "parse_lp_input.py"
     solve_script = root / "skills" / "build-and-solve-lp" / "scripts" / "build_and_solve_lp.py"
     report_script = (
         root / "skills" / "generate-alm-report" / "scripts" / "generate_alm_report.py"
@@ -51,17 +60,8 @@ def run(
         report_json_out = output_dir / "report.json"
         report_md_out = output_dir / "report.md"
 
-        parse_cmd = [
-            sys.executable,
-            str(parse_script),
-            "--input",
-            str(input_path),
-            "--output",
-            str(normalized_out),
-        ]
-        if extracted_json_path is not None:
-            parse_cmd.extend(["--extracted-json", str(extracted_json_path)])
-        _run(parse_cmd)
+        _validate_normalized_payload(input_path)
+        copyfile(input_path, normalized_out)
         _run(
             [
                 sys.executable,
@@ -118,21 +118,20 @@ def run(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run minimal ALM LP pipeline.")
-    parser.add_argument("--input", required=True, help="Path to raw LP input JSON.")
+    parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to normalized LP JSON (already extracted by parse-lp-input skill).",
+    )
     parser.add_argument(
         "--output-dir",
         required=True,
-        help="Directory for pipeline outputs (normalized, solution, report).",
+        help="Directory for pipeline outputs (copied normalized input, solution, report).",
     )
     parser.add_argument(
         "--solver",
         default="GLOP",
         help="OR-Tools linear solver backend (default: GLOP).",
-    )
-    parser.add_argument(
-        "--extracted-json",
-        default=None,
-        help="Optional AI-extracted LP JSON for parse step (recommended for non-JSON input).",
     )
     args = parser.parse_args()
 
@@ -141,7 +140,6 @@ def main() -> None:
             input_path=Path(args.input),
             output_dir=Path(args.output_dir),
             solver_name=args.solver,
-            extracted_json_path=Path(args.extracted_json) if args.extracted_json else None,
         )
     except Exception as exc:
         print(f"Fatal error: {exc}", file=sys.stderr)
