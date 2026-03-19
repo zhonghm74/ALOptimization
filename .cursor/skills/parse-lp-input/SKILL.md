@@ -20,10 +20,13 @@ read business documents and produce a complete, self-consistent LP problem defin
 | Field | Type | Description |
 |---|---|---|
 | Input | any document | Markdown/TXT/PDF/CSV/Excel/notes/specifications |
-| Output.variables | array | Decision variables with `name`, `lb`, `ub` |
-| Output.constraints | array | Linear constraints with `name`, `lb/ub`, and `terms[{var,coef}]` |
-| Output.objective | object | Objective with `sense`, `terms[{var,coef}]`, `constant` |
-| Output.metadata | object | Optional case metadata and extraction notes |
+| Output.model_json | object | Structured LP JSON containing `variables`, `constraints`, `objective`, `metadata` |
+| Output.problem_description_md | markdown | Human-readable problem statement (business background, objective, variables, constraints, assumptions) |
+| Output.variable_name_map_cn | object | Full variable-name map `{english_name: chinese_name}` covering all variables in `model_json` |
+| Output.model_json.variables | array | Variables with at least `name`, `lb`, `ub` (indexed or expanded per source granularity) |
+| Output.model_json.constraints | array | Linear constraints with `name`, `lb/ub`, and `terms[{var,coef}]` |
+| Output.model_json.objective | object | Objective with `sense`, `terms[{var,coef}]`, `constant` |
+| Output.model_json.metadata | object | Case metadata, extraction notes, and assumption records |
 
 ## Indexing and Expansion Policy
 - Preserve symbolic indexed forms by default (e.g., `x[t,Ai]`, `y[t,Lj]`, `s_liq[t]`, `r[t,Ai]`).
@@ -49,10 +52,12 @@ read business documents and produce a complete, self-consistent LP problem defin
 - Ensure every variable in objective/constraints is declared.
 - Ensure each constraint has at least one bound and one term.
 - Resolve ambiguous wording by stating assumptions explicitly.
-- Output machine-readable LP schema:
+- Output machine-readable LP schema (`model_json`):
   - `variables: [{name, lb, ub}]`
   - `constraints: [{name, lb, ub, terms:[{var, coef}]}]`
   - `objective: {sense, terms:[{var, coef}], constant}`
+- Build `variable_name_map_cn` for **all** variables in `model_json`.
+- Generate `problem_description_md` to explain the problem in natural language.
 
 ## Verification
 - [ ] All objective variables appear in `variables`.
@@ -61,6 +66,8 @@ read business documents and produce a complete, self-consistent LP problem defin
 - [ ] Every constraint has non-empty `terms` and at least one bound (`lb` or `ub`).
 - [ ] Variable extraction follows source granularity: indexed variables stay indexed unless explicit expansion is requested.
 - [ ] No unnecessary expansion of static parameters/constraints beyond the source document.
+- [ ] `variable_name_map_cn` covers every variable name in `model_json.variables` (no missing Chinese names).
+- [ ] `problem_description_md` explains objective, key variables, key constraints, and assumptions consistently with `model_json`.
 - [ ] Output can be consumed by downstream solve/report skills without schema changes.
 
 ## Anti-Patterns
@@ -68,6 +75,7 @@ read business documents and produce a complete, self-consistent LP problem defin
 - Do not hide uncertain mappings; record assumptions explicitly.
 - Do not invent constraints/objectives unsupported by source evidence.
 - Do not materialize indexed templates into thousands of concrete variables unless the source explicitly asks for expansion.
+- Do not output JSON variables without corresponding Chinese names in `variable_name_map_cn`.
 
 ## Extension Points
 - Add domain-specific extraction checklists (ALM, supply chain, scheduling, etc.).
