@@ -1,6 +1,6 @@
 ---
 name: parse-lp-input
-description: Parse business documents into LP artifacts with a runnable Python extractor.
+description: Parse business documents into LP artifacts by dynamically creating a Python extractor script at runtime.
 license: MIT
 ---
 
@@ -11,7 +11,7 @@ read business documents and produce a complete, self-consistent LP problem defin
 
 ## Triggers
 - `parse lp input from markdown`
-- `extract variables constraints objective by script`
+- `extract variables constraints objective by dynamic script`
 - `generate parser outputs for solver pipeline`
 - `extract report requirements and template`
 
@@ -20,7 +20,7 @@ read business documents and produce a complete, self-consistent LP problem defin
 | Field | Type | Description |
 |---|---|---|
 | Input.document | file | Source business document (Markdown/TXT/CSV/Excel converted/normalized to text) |
-| Input.command | shell | `python3 skills/parse-lp-input/scripts/parse_lp_input.py --input <doc> --output-dir <dir>` |
+| Input.command | shell | First create a temporary python parser under `skills/parse-lp-input/scripts/`, then run it with `python3 <tmp_script>.py --input <doc> --output-dir <dir>` |
 | Output.model_json | json | Structured LP definition with `variables`, `constraints`, `objective`, `metadata` |
 | Output.problem_description_md | markdown | Business-level problem description extracted from source |
 | Output.variable_name_map_cn | json | `{variable_name: chinese_name}` for all variables in `model_json.variables` |
@@ -35,16 +35,17 @@ read business documents and produce a complete, self-consistent LP problem defin
 - Record assumptions in `metadata.assumptions`.
 
 ## Scripts
-- `scripts/parse_lp_input.py`
-  - Parses LP model elements from source document.
-  - Generates all output files listed in I/O Contract.
-  - Performs consistency checks and exits non-zero on validation failure.
+- No fixed parser script is checked in as the default implementation.
+- The execution method is to dynamically create a Python script in `skills/parse-lp-input/scripts/` for the current input/task, run it, and iterate until outputs are correct.
+- Recommended temporary script naming:
+  - `scripts/generated_parse_lp_input_<timestamp>.py`
+  - `scripts/tmp_parse_lp_input.py`
 
 ## Process
 
-### Phase 1 - Create/Adjust Parser Script
-- Ensure parser logic lives in `skills/parse-lp-input/scripts/parse_lp_input.py`.
-- Implement extraction for:
+### Phase 1 - Dynamically Create Parser Script
+- Create a Python parser script dynamically in `skills/parse-lp-input/scripts/`.
+- The generated script should implement extraction for:
   - LP model (`variables`, `constraints`, `objective`, `metadata`)
   - `problem_description_md`
   - `variable_name_map_cn`
@@ -53,7 +54,7 @@ read business documents and produce a complete, self-consistent LP problem defin
 
 ### Phase 2 - Run Script to Extract Artifacts
 - Run:
-  - `python3 skills/parse-lp-input/scripts/parse_lp_input.py --input examples/alm_lp_full_test_input.md --output-dir examples`
+  - `python3 skills/parse-lp-input/scripts/<generated_script>.py --input examples/alm_lp_full_test_input.md --output-dir examples`
 - Expect these files:
   - `<stem>_parsed.json`
   - `<stem>_problem_description.md`
@@ -70,13 +71,13 @@ read business documents and produce a complete, self-consistent LP problem defin
   - requirements file includes mandatory chart/report requirements
   - template file contains reusable conclusion/report template
 - If output is wrong/incomplete:
-  - modify `scripts/parse_lp_input.py`
+  - modify/re-generate the temporary parser script
   - rerun command
   - repeat until outputs are correct
 
 ## Verification
-- [ ] Script exists at `skills/parse-lp-input/scripts/parse_lp_input.py`.
-- [ ] Running script generates all 6 output files.
+- [ ] Parser is dynamically created under `skills/parse-lp-input/scripts/` and executed successfully.
+- [ ] Running generated script produces all 6 output files.
 - [ ] All objective variables appear in `variables`.
 - [ ] All constraint term variables appear in `variables`.
 - [ ] All parameter variables are explicitly listed in `variables`.
@@ -87,7 +88,8 @@ read business documents and produce a complete, self-consistent LP problem defin
 - [ ] `report_template_md` includes an executable writing template.
 
 ## Anti-Patterns
-- Do not manually hand-edit generated output as the primary workflow; fix script and rerun.
+- Do not rely on a stale fixed parser implementation when the task requires dynamic extraction.
+- Do not manually hand-edit generated output as the primary workflow; fix generated script and rerun.
 - Do not invent unsupported constraints/objectives.
 - Do not skip parser rerun after script modifications.
 - Do not output variables without Chinese mapping.
