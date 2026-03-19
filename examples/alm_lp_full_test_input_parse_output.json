@@ -2,10 +2,14 @@
   "model_json_file": "examples/alm_lp_full_test_input_parsed.json",
   "problem_description_md_file": "examples/alm_lp_full_test_input_problem_description.md",
   "variable_name_map_cn_file": "examples/alm_lp_full_test_input_variable_name_map_cn.json",
+  "report_requirements_md_file": "examples/alm_lp_full_test_input_report_requirements.md",
+  "report_template_md_file": "examples/alm_lp_full_test_input_report_template.md",
   "output_contract": {
     "model_json": "包含 variables / constraints / objective / metadata 的结构化LP定义",
     "problem_description_md": "用文字描述问题背景、目标、变量与约束结构",
-    "variable_name_map_cn": "对 model_json.variables 中所有变量名给出中文名称"
+    "variable_name_map_cn": "对 model_json.variables 中所有变量名给出中文名称",
+    "report_requirements_md": "从输入文档抽取报告撰写要求（结构、必备图表、分析维度）",
+    "report_template_md": "从输入文档抽取可直接复用的结论/报告模板"
   },
   "variable_name_map_cn": {
     "x[t,Ai]": "第t天资产Ai持有量",

@@ -10,26 +10,28 @@
 - **动态约束**：针对每个标的设置差异化的跨日持仓变动上限，限制相邻两天仓位跳变。
 - **输出期望**：得到可被求解器直接消费的 LP 结构（变量、约束、目标、参数），并可进一步生成求解结果与可视化报告。
 
+---
+
 ## 2. 优化目标
 优化目标为最大化 90 天累计净收益：
 - 每日资产收益项：`SUM(Ai, (r[t,Ai]/365) * x[t,Ai])`
 - 每日负债成本项：`SUM(Lj, (c[t,Lj]/365) * y[t,Lj])`
 - 约束偏离惩罚项：`penalty_s_liq * s_liq[t]` 与 `penalty_s_dur * s_dur[t]`
 
-- 已根据最新输入提高指定资产与全负债日利率波动幅度，用于增强方案区分度与压力测试效果。
 ## 3. 决策变量与参数
 - 决策变量：`x[t,Ai]`、`y[t,Lj]`
 - 松弛变量：`s_liq[t]`、`s_dur[t]`
-- 核心参数：`r[t,Ai]`、`c[t,Lj]`、`w[Ai]`、`d[Ai]`、`delta_x[Ai]`、`delta_y[Lj]` 及策略阈值参数
+- 输入参数：`r[t,Ai]`、`c[t,Lj]`、`w[Ai]`、`d[Ai]`、`delta_x[Ai]`、`delta_y[Lj]` 及策略参数
 
 ## 4. 关键约束结构
-1. 每日总资产目标
-2. 每日资产负债平衡
-3. 流动性覆盖与久期暴露（含松弛变量）
-4. 高波动资产上限、批发融资上限、零售占比与期限匹配
-5. 跨日持仓变动上限（逐标的）
+1. 每日总资产目标约束
+2. 每日资产负债平衡约束
+3. 流动性覆盖、久期暴露、集中度与结构约束
+4. 跨日持仓变动约束（逐标的）
 
 ## 5. 输出文件
-1. `alm_lp_full_test_input_parsed.json`
-2. `alm_lp_full_test_input_problem_description.md`
-3. `alm_lp_full_test_input_variable_name_map_cn.json`
+1. `<stem>_parsed.json`
+2. `<stem>_problem_description.md`
+3. `<stem>_variable_name_map_cn.json`
+4. `<stem>_report_requirements.md`
+5. `<stem>_report_template.md`
