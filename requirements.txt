@@ -10,3 +10,4 @@ black
 ruff
 ortools
 openpyxl
+matplotlib
