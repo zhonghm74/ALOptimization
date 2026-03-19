@@ -1,25 +1,25 @@
 ---
 name: parse-lp-input
-description: Validate and normalize an ALM linear programming input file when constraints and objective are provided by the user as data.
+description: Extract variables, constraints, and objective from JSON, Markdown, TXT, CSV, or Excel documents, then normalize into LP-ready JSON.
 license: MIT
 ---
 
 # parse-lp-input
 
 ## Purpose
-Convert raw ALM LP JSON into a validated and normalized specification consumed by the solver skill.
+Convert heterogeneous ALM input documents into a validated and normalized LP specification consumed by solver skills.
 
 ## Triggers
-- `validate LP input json`
-- `normalize alm optimization input`
-- `check variables constraints objective format`
+- `extract LP model from markdown or txt`
+- `parse variables constraints objective from csv or excel`
+- `normalize alm optimization input from any document`
 - `prepare model spec for ortools`
 
 ## I/O Contract
 
 | Field | Type | Description |
 |---|---|---|
-| input_path | path | Raw JSON containing `variables`, `constraints`, `objective` |
+| input_path | path | Input document path (`.json`, `.md`, `.txt`, `.csv`, `.xlsx`, `.xlsm`, `.xls`) |
 | output_path | path | Normalized JSON output path |
 | output.variables | array | Variables with normalized bounds (`float` or `null`) |
 | output.constraints | array | Constraint list referencing declared variables only |
@@ -28,8 +28,8 @@ Convert raw ALM LP JSON into a validated and normalized specification consumed b
 ## Process
 
 ### Phase 1 - Structural Validation
-- Require top-level `variables`, `constraints`, `objective`.
-- Validate variable names, bound consistency, and term references.
+- Detect source format and extract `variables`, `constraints`, `objective`.
+- Support direct JSON, sectioned tabular CSV/Excel, and markdown/txt equation documents.
 
 ### Phase 2 - Numeric Normalization
 - Normalize numeric values to float.
@@ -47,7 +47,7 @@ Usage:
 
 ```bash
 python skills/parse-lp-input/scripts/parse_lp_input.py \
-  --input examples/input/alm_lp_input.json \
+  --input examples/alm_lp_full_test_input.md \
   --output examples/output/normalized_lp.json
 ```
 
@@ -58,6 +58,8 @@ Exit Codes:
 
 ## Verification
 - [ ] Valid input returns exit code `0` and writes `normalized_lp.json`.
+- [ ] Markdown/TXT equation documents can be parsed into valid LP JSON.
+- [ ] Sectioned CSV/Excel inputs can be parsed into valid LP JSON.
 - [ ] Duplicate variable names fail with exit code `2`.
 - [ ] Unknown variable references in objective/constraints fail with exit code `2`.
 
@@ -69,3 +71,4 @@ Exit Codes:
 ## Extension Points
 - Add optional schema versioning and backward compatibility checks.
 - Add domain-specific ALM business-rule prechecks before normalization.
+- Add LLM-assisted extraction fallback for highly unstructured documents.

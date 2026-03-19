@@ -9,3 +9,4 @@ pytest
 black
 ruff
 ortools
+openpyxl
