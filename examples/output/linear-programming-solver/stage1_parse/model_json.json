@@ -2781,8 +2781,8 @@
     {
       "name": "single_asset_a15_cap",
       "role": "parameter",
-      "lb": 420.0,
-      "ub": 420.0
+      "lb": 90.0,
+      "ub": 90.0
     },
     {
       "name": "term_structure_buffer",

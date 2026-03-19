@@ -3152,7 +3152,7 @@
     "constant": 0.0
   },
   "metadata": {
-    "source_document": "/workspace/examples/alm_lp_full_test_input.md",
+    "source_document": "examples/alm_lp_full_test_input.md",
     "case_id": "alm_full_test_002",
     "case_name": "ALM 90天多资产多负债优化样例（15类资产，8类负债）",
     "currency": "CNY",
