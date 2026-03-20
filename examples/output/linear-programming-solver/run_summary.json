@@ -2,7 +2,9 @@
   "stage1": {
     "model_json": "/workspace/examples/output/linear-programming-solver/stage1_parse/model_json.json",
     "problem_description_md": "/workspace/examples/output/linear-programming-solver/stage1_parse/problem_description.md",
-    "variable_name_map_cn": "/workspace/examples/output/linear-programming-solver/stage1_parse/variable_name_map_cn.json"
+    "variable_name_map_cn": "/workspace/examples/output/linear-programming-solver/stage1_parse/variable_name_map_cn.json",
+    "report_requirements_md": "/workspace/examples/output/linear-programming-solver/stage1_parse/report_requirements.md",
+    "report_template_md": "/workspace/examples/output/linear-programming-solver/stage1_parse/report_template.md"
   },
   "stage2": {
     "normalized_lp": "/workspace/examples/output/linear-programming-solver/normalized_lp.json",
