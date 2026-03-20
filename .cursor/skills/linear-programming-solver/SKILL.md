@@ -30,35 +30,12 @@ Define a complete, reproducible LP solution methodology that links three skills 
 | Stage3.report_json | object | 结构化结果报告（可用于系统集成） |
 | Stage3.report_md | markdown | 面向业务和管理层的可读报告 |
 | Stage3.chart_manifest | object | 图表索引与来源表关系（用于可视化追踪） |
-| Orchestration.script_reuse_log | object | 每阶段脚本复用/重建决策、健康检查结果、重建原因 |
-
-## Script Lifecycle Policy (Pipeline-wide)
-- The pipeline must use **reuse-first** script orchestration for all three stages:
-  - `parse-lp-input`
-  - `build-and-solve-lp`
-  - `generate-lp-report`
-- Generated scripts should be kept (not deleted) for reuse by future runs.
-- For each stage, before execution:
-  1. Check whether stage script exists in `scripts/`.
-  2. Run health checks.
-  3. Reuse only if all health checks pass.
-  4. Otherwise regenerate/repair script and re-check.
-- Health checks must include all three dimensions:
-  - **Requirement-fit**: script logic matches current problem requirements and stage-specific inputs.
-  - **Output validation**: stage output satisfies required schema/content checks.
-  - **Skill verification**: stage skill `Verification` checklist passes.
-- Record decision and evidence in `script_reuse_log`:
-  - `reused/regenerated`
-  - failed check category
-  - regenerate reason
-  - final validation result
 
 ## End-to-End Methodology
 
 ### Phase 1 - Parse (parse_lp_input)
 目标：从业务文档抽取可求解 LP 定义并建立语义可解释层。  
 执行要点：
-0. 先执行 parse 阶段脚本生命周期策略（检查/复用/重建）。
 1. 识别优化目标、决策变量、参数变量、约束条件及边界。
 2. 生成 `model_json`（`variables/constraints/objective/metadata`）。
 3. 生成 `problem_description_md`（问题背景、建模假设、口径说明）。
@@ -73,7 +50,6 @@ Define a complete, reproducible LP solution methodology that links three skills 
 ### Phase 2 - Build & Solve (build-and-solve-lp)
 目标：用 OR-Tools 将 `model_json` 转为可求解 LP 并获取稳定求解结果。  
 执行要点：
-0. 先执行 solve 阶段脚本生命周期策略（检查/复用/重建）。
 1. 按 `build-and-solve-lp` 的 OR-Tools 建模规范创建变量、约束和目标。
 2. 选择求解后端（默认 `GLOP`，大规模可评估 `PDLP`）。
 3. 执行求解并输出 `solution_json`：
@@ -91,7 +67,6 @@ Define a complete, reproducible LP solution methodology that links three skills 
 ### Phase 3 - Generate Report (generate-lp-report)
 目标：把求解结果转化为可决策的结构化+可读报告，并可视化展示关键结果。  
 执行要点：
-0. 先执行 report 阶段脚本生命周期策略（检查/复用/重建）。
 1. 汇总核心指标：目标值、非零变量、约束满足情况、风险提示。
 2. 输出 `report_json` 和 `report_md`，保证口径一致。
 3. 构建 `report_tables` 与 `chart_manifest`，并调用可视化 skills 生成图表：
@@ -108,8 +83,6 @@ Define a complete, reproducible LP solution methodology that links three skills 
 
 ## Verification Checklist
 - [ ] 三阶段产物齐全：`model_json`、`solution_json`、`report_json/report_md`。
-- [ ] 三阶段脚本均执行了复用优先策略，并记录 `script_reuse_log`。
-- [ ] 每阶段健康检查都包含：requirement-fit、output validation、skill verification。
 - [ ] Stage1 与 Stage2 变量命名一致，无未知变量引用。
 - [ ] Stage2 约束满足性与容差判定一致，目标值可回代复核。
 - [ ] Stage3 报告中的表格、图表、结论口径一致。
@@ -120,7 +93,6 @@ Define a complete, reproducible LP solution methodology that links three skills 
 - Do not run solve-stage when Stage1 artifacts are inconsistent or missing.
 - Do not produce narrative conclusions that are not supported by report tables/charts.
 - Do not merge multiple scenario results without explicit scenario labeling.
-- Do not reuse an existing stage script without checking requirement-fit for the current problem.
 
 ## References
 - `skills/parse-lp-input/SKILL.md`
