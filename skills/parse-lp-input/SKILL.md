@@ -41,10 +41,24 @@ read business documents and produce a complete, self-consistent LP problem defin
   - `scripts/generated_parse_lp_input_<timestamp>.py`
   - `scripts/tmp_parse_lp_input.py`
 
+## Script Lifecycle Policy
+- Keep generated parser script after execution (do not delete by default).
+- Preferred reusable path: `scripts/parse_lp_input.py` (or a stable configured path).
+- Reuse-first decision:
+  1. If script exists, run health checks first.
+  2. Reuse only when all health checks pass.
+  3. If script missing or health checks fail, regenerate/repair script, then rerun checks.
+- Health checks must include all three categories:
+  - **Requirement-fit check**: script logic matches current problem requirements (input type, expected outputs, indexing/expansion policy, report extraction scope).
+  - **Output validation**: generated artifacts satisfy schema and completeness checks.
+  - **Skill verification**: this skill's Verification checklist items are satisfied.
+
 ## Process
 
-### Phase 1 - Dynamically Create Parser Script
-- Create a Python parser script dynamically in `scripts/`.
+### Phase 1 - Reuse or (Re)Create Parser Script
+- If a reusable parser script already exists in `scripts/`, run health checks first.
+- If health checks pass, reuse existing script directly.
+- If health checks fail or script is missing, create/repair parser script in `scripts/`.
 - The generated script should implement extraction for:
   - LP model (`variables`, `constraints`, `objective`, `metadata`)
   - `problem_description_md`
@@ -64,12 +78,17 @@ read business documents and produce a complete, self-consistent LP problem defin
   - `<stem>_parse_output.json`
 
 ### Phase 3 - Validate and Iterate Until Correct
-- Validate schema and references:
+- Validate schema and references (output validation):
   - all objective/constraint variables must exist in `variables`
   - all parameter variables must be explicitly listed in `variables`
 - Validate report extraction:
   - requirements file includes mandatory chart/report requirements
   - template file contains reusable conclusion/report template
+- Validate requirement-fit:
+  - current script behavior matches current problem requirements
+  - no stale assumptions from previous tasks
+- Validate skill verification:
+  - all checklist items in `Verification` pass
 - If output is wrong/incomplete:
   - modify/re-generate the temporary parser script
   - rerun command
@@ -89,6 +108,7 @@ read business documents and produce a complete, self-consistent LP problem defin
 
 ## Anti-Patterns
 - Do not rely on a stale fixed parser implementation when the task requires dynamic extraction.
+- Do not reuse an existing script without checking requirement-fit for the current task.
 - Do not manually hand-edit generated output as the primary workflow; fix generated script and rerun.
 - Do not invent unsupported constraints/objectives.
 - Do not skip parser rerun after script modifications.

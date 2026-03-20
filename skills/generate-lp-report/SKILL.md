@@ -43,10 +43,25 @@ Produce decision-ready LP result reports that explain optimization outcomes, con
   - `scripts/generated_generate_lp_report_<timestamp>.py`
   - `scripts/tmp_generate_lp_report.py`
 
+## Script Lifecycle Policy
+- Keep generated reporting script after execution (do not delete by default).
+- Preferred reusable path: `scripts/generate_lp_report.py` (or a stable configured path).
+- Reuse-first decision:
+  1. If script exists, run health checks first.
+  2. Reuse only when all health checks pass.
+  3. If script missing or health checks fail, regenerate/repair script, then rerun checks.
+- Health checks must include:
+  - **Requirement-fit check**: script behavior matches current report requirements (including parser-extracted `report_requirements_md` and optional template usage).
+  - **Output validation**: `report_json` / `report_md` / chart outputs satisfy schema and completeness checks.
+  - **Skill verification**: this skill's Verification checklist items all pass.
+
 ## Process
 
-### Phase 1 - Dynamically Create Report Script
-- Dynamically create a Python script in `scripts/` that:
+### Phase 1 - Reuse or (Re)Create Report Script
+- If a reusable report script exists in `scripts/`, run health checks first.
+- If health checks pass, reuse script directly.
+- If health checks fail or script is missing, create/repair report script in `scripts/`.
+- Script should:
   - reads `model_json` and `solution_json`
   - reads `report_requirements_md` (required) and `report_template_md` (optional)
   - builds `summary`, `variable_analysis`, `constraint_analysis`
@@ -61,11 +76,13 @@ Produce decision-ready LP result reports that explain optimization outcomes, con
 
 ### Phase 3 - Validate and Iterate Until Correct
 - Validate:
+  - requirement-fit for current problem and current `report_requirements_md`
   - required outputs exist (`report_json`, `report_md`)
   - required inputs were consumed (`report_requirements_md` must be loaded successfully)
   - fields are complete and internally consistent
   - report sections/charts satisfy requirement checklist from `report_requirements_md`
   - chart entries map to `report_tables` (if charts generated)
+  - all `Verification Checklist` items pass
 - If output is wrong/incomplete:
   - modify/regenerate temporary script
   - rerun
@@ -188,6 +205,7 @@ Produce decision-ready LP result reports that explain optimization outcomes, con
 
 ## Anti-Patterns
 - Do not rely on stale fixed report scripts when dynamic generation is required.
+- Do not reuse an existing report script without checking requirement-fit for current report requirements.
 - Do not manually patch `report_json`/`report_md` as primary workflow; fix generated script and rerun.
 - Do not ignore parser-extracted `report_requirements_md` when composing report sections/charts.
 - Do not mark a constraint as satisfied when activity is missing.

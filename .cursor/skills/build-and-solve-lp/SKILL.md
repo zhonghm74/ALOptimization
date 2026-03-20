@@ -37,10 +37,25 @@ Use OR-Tools to construct and solve a linear programming (LP) model from normali
   - `scripts/generated_build_and_solve_lp_<timestamp>.py`
   - `scripts/tmp_build_and_solve_lp.py`
 
+## Script Lifecycle Policy
+- Keep generated solver script after execution (do not delete by default).
+- Preferred reusable path: `scripts/build_and_solve_lp.py` (or a stable configured path).
+- Reuse-first decision:
+  1. If script exists, run health checks first.
+  2. Reuse only when all health checks pass.
+  3. If script missing or health checks fail, regenerate/repair script, then rerun checks.
+- Health checks must include:
+  - **Requirement-fit check**: script matches current solve requirements (backend, model granularity, expected diagnostics).
+  - **Output validation**: produced `solution_json` is structurally complete and numerically sane.
+  - **Skill verification**: this skill's Verification checklist passes end-to-end.
+
 ## Process
 
-### Phase 1 - Dynamically Create Solver Script
-- Create a Python script dynamically in `scripts/` to:
+### Phase 1 - Reuse or (Re)Create Solver Script
+- If a reusable solver script exists in `scripts/`, run health checks first.
+- If health checks pass, reuse script directly.
+- If health checks fail or script is missing, create/repair solver script in `scripts/`.
+- Script responsibilities:
   1. load normalized `model_json`
   2. build OR-Tools model (`variables`, `constraints`, `objective`)
   3. solve with selected backend (`GLOP`/`PDLP`)
@@ -54,11 +69,13 @@ Use OR-Tools to construct and solve a linear programming (LP) model from normali
 
 ### Phase 3 - Validate and Iterate Until Correct
 - Validate:
+  - current script matches current problem requirements (requirement-fit)
   - model references complete (`terms.var` all declared)
   - bounds/coefs numeric and valid
   - status interpretable
   - when primal exists, `objective_value` and `variable_values` present
   - constraint activities and satisfaction checks consistent
+  - all `Verification Checklist` items pass
 - If output is wrong/incomplete:
   - modify/regenerate temporary script
   - rerun
@@ -129,6 +146,7 @@ Use OR-Tools to construct and solve a linear programming (LP) model from normali
 
 ## Anti-Patterns
 - Do not rely on a stale fixed solver script when dynamic generation is required.
+- Do not reuse an existing solver script without checking current requirement-fit.
 - Do not manually patch `solution_json` as primary workflow; fix generated script and rerun.
 - Do not output variable assignments when solver has no primal solution.
 - Do not assume dual/reduced-cost is always available for every backend/status.
